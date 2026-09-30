@@ -147,6 +147,36 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Inject Custom Jajeh Support Settings
+        shell: python
+        run: |
+          import os, re, shutil
+          
+          print("Applying custom logos...")
+          if os.path.exists('icon.png'): shutil.copy('icon.png', 'flutter/assets/icon.png')
+          if os.path.exists('icon.ico'): shutil.copy('icon.ico', 'res/icon.ico')
+          
+          print("Patching config.rs...")
+          conf = 'libs/hbb_common/src/config.rs'
+          with open(conf, 'r', encoding='utf-8') as f: txt = f.read()
+          
+          txt = txt.replace('pub const RENDEZVOUS_SERVERS: &[&str] = &[];', 'pub const RENDEZVOUS_SERVERS: &[&str] = &["remote.jajeh.net"];')
+          txt = txt.replace('pub const RS_PUB_KEY: &str = "";', 'pub const RS_PUB_KEY: &str = "ETvGp2LBe6jt3rBDxuXMEI6pV+v9aYdz0hU+YXRCSCQ=";')
+          txt = txt.replace('RwLock::new("RustDesk".to_owned())', 'RwLock::new("Jajeh Support".to_owned())')
+          
+          txt = re.sub(r'pub fn is_incoming_only\(\) -> bool \{.*?\}', 'pub fn is_incoming_only() -> bool { true }', txt, flags=re.DOTALL)
+          txt = re.sub(r'pub fn is_disable_settings\(\) -> bool \{.*?\}', 'pub fn is_disable_settings() -> bool { true }', txt, flags=re.DOTALL)
+          txt = re.sub(r'pub fn is_disable_ab\(\) -> bool \{.*?\}', 'pub fn is_disable_ab() -> bool { true }', txt, flags=re.DOTALL)
+          txt = re.sub(r'pub fn is_disable_account\(\) -> bool \{.*?\}', 'pub fn is_disable_account() -> bool { true }', txt, flags=re.DOTALL)
+          
+          with open(conf, 'w', encoding='utf-8') as f: f.write(txt)
+          
+          print("Patching common.dart...")
+          dart = 'flutter/lib/common.dart'
+          with open(dart, 'r', encoding='utf-8') as f: dtxt = f.read()
+          dtxt = dtxt.replace("const String appName = 'RustDesk';", "const String appName = 'Jajeh Support';")
+          with open(dart, 'w', encoding='utf-8') as f: f.write(dtxt)
+
       - name: Restore bridge files
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
